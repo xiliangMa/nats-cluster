@@ -1,0 +1,68 @@
+version: '3'
+networks:
+  nats-net:
+    external: true
+services:
+  nats1:
+    image: nats:2.1.9
+    ports:
+      - 4222:4222
+      - 8222:8222
+    networks:
+      - nats-net
+    command: -m 8222 --user "nats" --pass "P@ssw0rd" --cluster nats://0.0.0.0:6222 --routes nats://nats3:6222
+  nats2:
+    image: nats:2.1.9
+    ports:
+      - 4223:4222
+      - 8223:8222
+    networks:
+      - nats-net
+    command: -m 8222 --user "nats" --pass "P@ssw0rd" --cluster nats://0.0.0.0:6222 --routes nats://nats1:6222
+  nats3:
+    image: nats:2.1.9
+    ports:
+      - 4224:4222
+      - 8224:8222
+    networks:
+      - nats-net
+    command: -m 8222 --user "nats" --pass "P@ssw0rd" --cluster nats://0.0.0.0:6222 --routes nats://nats2:6222
+
+  nats-streaming1:
+    image: nats-streaming:0.20.0
+    depends_on:
+      - nats1
+      - nats2
+      - nats3
+    networks:
+      - nats-net
+    volumes:
+      - /var/lib/nats/nats-streaming1/data:/nats/data
+      - /var/log/nats/nats-streaming1/log:/nats/log
+    command: "--store file --dir /nats/data -clustered --cluster_log_path /nats/log --cluster_id nats-cluster --cluster_node_id nats-streaming1  --cluster_peers nats-streaming2,nats-streaming3 --cluster_sync --nats_server nats://nats:P@ssw0rd@nats1:4222,nats://nats:P@ssw0rd@nats2:4222,nats://nats:P@ssw0rd@nats3:4222"
+
+  nats-streaming2:
+    image: nats-streaming:0.20.0
+    depends_on:
+      - nats1
+      - nats2
+      - nats3
+    networks:
+      - nats-net
+    volumes:
+      - /var/lib/nats/nats-streaming2/data:/nats/data
+      - /var/log/nats/nats-streaming2/log:/nats/log
+    command: "--store file --dir /nats/data -clustered --cluster_log_path /nats/log --cluster_id nats-cluster --cluster_node_id nats-streaming2 --cluster_peers nats-streaming1,nats-streaming3 --cluster_sync --nats_server nats://nats:P@ssw0rd@nats1:4222,nats://nats:P@ssw0rd@nats2:4222,nats://nats:P@ssw0rd@nats3:4222"
+
+  nats-streaming3:
+    image: nats-streaming:0.20.0
+    depends_on:
+      - nats1
+      - nats2
+      - nats3
+    networks:
+      - nats-net
+    volumes:
+      - /var/lib/nats/nats-streaming3/data:/nats/data
+      - /var/log/nats/nats-streaming3/log:/nats/log
+    command: "--store file --dir /nats/data -clustered --cluster_log_path /nats/log --cluster_id nats-cluster --cluster_node_id nats-streaming3 --cluster_peers nats-streaming1,nats-streaming2 --cluster_sync --nats_server nats://nats:P@ssw0rd@nats1:4222,nats://nats:P@ssw0rd@nats2:4222,nats://nats:P@ssw0rd@nats3:4222"

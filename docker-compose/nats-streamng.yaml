@@ -1,0 +1,35 @@
+version: '3'
+networks:
+  nats-net:
+    external: true
+services:
+  nats-1:
+    image: nats-streaming:0.20.0-alpine3.12
+    ports:
+      - 4222:4222
+    networks:
+      - nats-net
+    volumes:
+      - /var/lib/nats/nats-1/data:/data/stan/store
+      - ./stan.conf:/etc/stan-config/stan.conf
+    command: -sc /etc/stan-config/stan.conf
+  nats-2:
+    image: nats-streaming:0.20.0-alpine3.12
+    ports:
+      - 4223:4222
+    networks:
+      - nats-net
+    volumes:
+      - /var/lib/nats/nats-2/data:/data/stan/store
+      - ./stan.conf:/etc/stan-config/stan.conf
+    command: -sc /etc/stan-config/stan.conf
+  nats-3:
+    image: nats-streaming:0.20.0-alpine3.12
+    ports:
+      - 4224:4222
+    networks:
+      - nats-net
+    volumes:
+      - /var/lib/nats/nats-3/data:/data/stan/store
+      - ./stan.conf:/etc/stan-config/stan.conf
+    command: -sc /etc/stan-config/stan.conf
